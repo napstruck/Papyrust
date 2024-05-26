@@ -1,0 +1,43 @@
+{
+  "name": "cipher-io-trpc",
+  "version": "1.0.0",
+  "description": "tRPC & Web Socket server for Cipher.io",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "ts-node index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/worlds-best-team/cipher-io-wss.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/worlds-best-team/cipher-io-wss/issues"
+  },
+  "homepage": "https://github.com/worlds-best-team/cipher-io-wss#readme",
+  "dependencies": {
+    "@trpc/client": "^11.0.0-rc.377",
+    "@trpc/server": "^11.0.0-rc.377",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.2",
+    "socket.io": "^4.7.5",
+    "zod": "^3.23.8"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^5.0.10"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
