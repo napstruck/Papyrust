@@ -1,3 +1,3 @@
 # cipher-io-trpc
 
-tRPC and WS client for Cipher.io
+tRPC and WS server for Cipher.io
