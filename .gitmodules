@@ -1,0 +1,3 @@
+[submodule "client"]
+	path = client
+	url = https://github.com/worlds-best-team/cipher-io-react
