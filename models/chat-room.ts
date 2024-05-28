@@ -6,6 +6,8 @@ const MessageSchema = new mongoose.Schema(
     content: {
       type: String,
       required: true,
+      maxLength: 2048,
+      minLength: 1,
     },
 
     sender_token_hash: {
@@ -28,11 +30,11 @@ const MessageSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const ChatRoomModel = mongoose.model(
-  "ChatRoom",
+  'ChatRoom',
   new mongoose.Schema({
     name: {
       type: String,
@@ -48,7 +50,8 @@ export const ChatRoomModel = mongoose.model(
     invite_code: {
       type: String,
       required: true,
-      default: () => randomBytes(48).toString("hex"),
+      unique: true,
+      default: () => randomBytes(48).toString('hex'),
     },
 
     admin_token_hash: {
@@ -60,7 +63,7 @@ export const ChatRoomModel = mongoose.model(
       type: [String],
     },
 
-    whitelisted_user_token_hashes: {
+    blacklisted_user_token_hashes: {
       type: [String],
     },
 
@@ -68,5 +71,5 @@ export const ChatRoomModel = mongoose.model(
       type: [MessageSchema],
     },
   }),
-  "chat_room"
+  'chat_room',
 );

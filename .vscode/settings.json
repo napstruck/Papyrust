@@ -2,6 +2,7 @@
   "editor.formatOnSave": true,
   "editor.minimap.enabled": true,
   "editor.minimap.autohide": true,
-  "editor.wordWrap": "wordWrapColumn",
-  "editor.wordWrapColumn": 500
+  "editor.guides.indentation": false,
+  "todohighlight.isEnable": true,
+  "editor.foldingHighlight": true
 }
