@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { t } from "../trpc/trpcInstance";
-import { ChatRoomModel } from "../models/chat-room";
-import { usernamify } from "../utils/string";
-import { sha256 } from "../utils/crypto";
+import { z } from 'zod';
+import { t } from '../trpc/trpcInstance';
+import { ChatRoomModel } from '../models/chat-room';
+import { usernamify } from '../utils/string';
+import { sha256 } from '../utils/crypto';
 import { buildResponseZObjectType } from '../utils/zod';
 import { TRPCError } from '@trpc/server';
 
@@ -19,7 +19,6 @@ export const chatRoomRouter = t.router({
       buildResponseZObjectType({
         chatRoomName: z.string(),
         password: z.string(),
-        inviteCode: z.string(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -36,7 +35,6 @@ export const chatRoomRouter = t.router({
         payload: {
           chatRoomName: newRoom.name,
           password: password,
-          inviteCode: newRoom.invite_code,
         },
       };
     }),
@@ -51,7 +49,7 @@ export const chatRoomRouter = t.router({
     )
     .output(
       buildResponseZObjectType({
-        inviteCode: z.string(),
+        chatRoomName: z.string(),
         password: z.string(),
       }),
     )
@@ -72,7 +70,7 @@ export const chatRoomRouter = t.router({
       return {
         success: true,
         payload: {
-          inviteCode,
+          chatRoomName: requestedChatRoom.name,
           password,
         },
         message: 'Access granted',
@@ -83,7 +81,7 @@ export const chatRoomRouter = t.router({
     .input(
       z.object({
         frameIndex: z.number().min(1),
-        inviteCode: z.string(),
+        chatRoomName: z.string(),
         password: z.string(),
       }),
     )
@@ -108,7 +106,7 @@ export const chatRoomRouter = t.router({
     )
     .query(async ({ input }) => {
       const requestedChatRoom = await ChatRoomModel.findOne({
-        invite_code: input.inviteCode,
+        name: input.chatRoomName,
         password_hash: sha256(input.password),
       });
 
@@ -146,14 +144,14 @@ export const chatRoomRouter = t.router({
             .nullable()
             .default(null),
         }),
-        inviteCode: z.string(),
+        chatRoomName: z.string(),
         password: z.string(),
       }),
     )
     .output(buildResponseZObjectType())
     .mutation(async ({ input }) => {
       const requestedChatRoom = await ChatRoomModel.findOne({
-        invite_code: input.inviteCode,
+        name: input.chatRoomName,
         password_hash: sha256(input.password),
       });
 
@@ -166,7 +164,7 @@ export const chatRoomRouter = t.router({
 
       await ChatRoomModel.findOneAndUpdate(
         {
-          invite_code: input.inviteCode,
+          name: input.chatRoomName,
           password_hash: sha256(input.password),
         },
         { $push: { messages: input.messageBody } },

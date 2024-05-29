@@ -1,7 +1,7 @@
 {
   "name": "cipher-io-trpc",
   "version": "1.0.0",
-  "description": "tRPC & Web Socket server for Cipher.io",
+  "description": "tRPC & Web Socket server for Cipher.io backend",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/worlds-best-team/cipher-io-wss#readme",
   "dependencies": {
+    "@tanstack/react-query": "^5.40.0",
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "cors": "^2.8.5",

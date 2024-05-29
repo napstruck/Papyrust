@@ -1,18 +1,8 @@
-export function usernamify(text: string) {
-  // Normalize the text to remove special characters
-  text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-  // Convert to lowercase
-  text = text.toLowerCase();
-
-  // Remove non-alphanumeric characters (keeping hyphens and spaces)
-  text = text.replace(/[^a-z0-9\s-]/g, "");
-
-  // Replace spaces and underscores with underscores
-  text = text.replace(/[\s_-]+/g, "_");
-
-  // Remove leading and trailing hyphens
-  text = text.replace(/^-+|-+$/g, "");
-
-  return text;
+export function usernamify(str: string) {
+  return str
+    .toLowerCase() // Convert to lowercase
+    .trim() // Trim leading/trailing spaces
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/[^\w\-]+/g, '') // Remove all non-word characters
+    .replace(/\_\_+/g, '_'); // Replace multiple underscores with a single underscore
 }

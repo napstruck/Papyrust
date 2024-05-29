@@ -28,5 +28,5 @@ server.listen(process.env.PORT || 3000, async () => {
   envSchema.parse(process.env);
   console.log(`[✓] Server running at http://localhost:${process.env.PORT || 3000}`);
   await initMongoDB();
-  await test_main();
+  //await test_main();
 });
