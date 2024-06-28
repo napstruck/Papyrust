@@ -14,7 +14,7 @@ export const SendMessageInputZSchema = z.object({
       .nullable()
       .default(null),
   }),
-  inviteCode: z.string(),
+  chatRoomName: z.string(),
   password: z.string(),
 });
 

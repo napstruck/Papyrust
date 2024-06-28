@@ -136,22 +136,22 @@ export const chatRoomRouter = t.router({
   onNewMessage: t.procedure
     .input(
       z.object({
-        inviteCode: z.string(),
+        chatRoomName: z.string(),
         password: z.string(),
         user_token_hash: z.string(),
       }),
     )
     .subscription(({ input }) => {
-      const { inviteCode, password, user_token_hash } = input;
+      const { chatRoomName, password, user_token_hash } = input;
 
       return observable<z.infer<typeof MessageBodyZSchema>>((emit) => {
         const onSendMessage = async (data: z.infer<typeof SendMessageInputZSchema>) => {
-          const chatRoom = await ChatRoomModel.findOne({ invite_code: data.inviteCode });
+          const chatRoom = await ChatRoomModel.findOne({ name: data.chatRoomName });
 
           if (chatRoom === null) throw Error('The chat room in tunneling request does not exist');
 
           if (
-            data.inviteCode === inviteCode &&
+            data.chatRoomName === chatRoomName &&
             data.password === password &&
             !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
           ) {
