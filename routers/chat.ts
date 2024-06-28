@@ -3,8 +3,13 @@ import { t } from '../trpc/trpcInstance';
 import { ChatRoomModel } from '../models/chat-room';
 import { usernamify } from '../utils/string';
 import { sha256 } from '../utils/crypto';
+import { observable } from '@trpc/server/observable';
 import { buildResponseZObjectType } from '../utils/zod';
 import { TRPCError } from '@trpc/server';
+import { EventEmitter } from 'events';
+import { MessageBodyZSchema, SendMessageInputZSchema } from '../types/trpc';
+
+const ee = new EventEmitter();
 
 export const chatRoomRouter = t.router({
   createRoom: t.procedure
@@ -128,6 +133,40 @@ export const chatRoomRouter = t.router({
       };
     }),
 
+  onNewMessage: t.procedure
+    .input(
+      z.object({
+        inviteCode: z.string(),
+        password: z.string(),
+        user_token_hash: z.string(),
+      }),
+    )
+    .subscription(({ input }) => {
+      const { inviteCode, password, user_token_hash } = input;
+
+      return observable<z.infer<typeof MessageBodyZSchema>>((emit) => {
+        const onSendMessage = async (data: z.infer<typeof SendMessageInputZSchema>) => {
+          const chatRoom = await ChatRoomModel.findOne({ invite_code: data.inviteCode });
+
+          if (chatRoom === null) throw Error('The chat room in tunneling request does not exist');
+
+          if (
+            data.inviteCode === inviteCode &&
+            data.password === password &&
+            !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
+          ) {
+            emit.next({ ...data.messageBody });
+          }
+        };
+
+        ee.on('newMessage', onSendMessage);
+
+        return () => {
+          ee.off('newMessage', onSendMessage);
+        };
+      });
+    }),
+
   sendMessage: t.procedure
     .input(
       z.object({
@@ -171,6 +210,8 @@ export const chatRoomRouter = t.router({
         },
         { $push: { messages: { content, sender_token_hash: sha256(sender_token), sender_username, reply_to } } },
       );
+
+      ee.emit('newMessage', { ...input });
 
       return {
         success: true,
