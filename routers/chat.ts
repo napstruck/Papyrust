@@ -7,7 +7,8 @@ import { observable } from '@trpc/server/observable';
 import { buildResponseZObjectType } from '../utils/zod';
 import { TRPCError } from '@trpc/server';
 import { EventEmitter } from 'events';
-import { MessageBodyZSchema, SendMessageInputZSchema } from '../types/trpc';
+import { MemberChangeZSchema, MessageBodyZSchema, SendMessageInputZSchema } from '../types/trpc';
+import { activeMemberNCache } from '../db/crcache-init';
 
 const ee = new EventEmitter();
 
@@ -136,26 +137,26 @@ export const chatRoomRouter = t.router({
   onNewMessage: t.procedure
     .input(
       z.object({
-        inviteCode: z.string(),
+        chatRoomName: z.string(),
         password: z.string(),
         user_token_hash: z.string(),
       }),
     )
     .subscription(({ input }) => {
-      const { inviteCode, password, user_token_hash } = input;
+      const { chatRoomName, password, user_token_hash } = input;
 
-      return observable<z.infer<typeof MessageBodyZSchema>>((emit) => {
+      return observable<z.infer<typeof MessageBodyZSchema>>((observer) => {
         const onSendMessage = async (data: z.infer<typeof SendMessageInputZSchema>) => {
-          const chatRoom = await ChatRoomModel.findOne({ invite_code: data.inviteCode });
+          const chatRoom = await ChatRoomModel.findOne({ name: data.chatRoomName });
 
           if (chatRoom === null) throw Error('The chat room in tunneling request does not exist');
 
           if (
-            data.inviteCode === inviteCode &&
+            data.chatRoomName === chatRoomName &&
             data.password === password &&
             !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
           ) {
-            emit.next({ ...data.messageBody });
+            observer.next({ ...data.messageBody });
           }
         };
 
@@ -163,6 +164,76 @@ export const chatRoomRouter = t.router({
 
         return () => {
           ee.off('newMessage', onSendMessage);
+        };
+      });
+    }),
+
+  onMemberChange: t.procedure
+    .input(
+      z.object({
+        chatRoomName: z.string(),
+        password: z.string(),
+        user_token_hash: z.string(),
+        userName: z.string(),
+      }),
+    )
+    .subscription(async ({ input }) => {
+      const { chatRoomName, password, user_token_hash, userName } = input;
+
+      const chatRoom = await ChatRoomModel.findOne({ name: chatRoomName });
+      if (chatRoom === null) throw Error('The chat room in tunneling request does not exist');
+
+      if (
+        !(
+          chatRoomName === chatRoom.name &&
+          sha256(password) === chatRoom.password_hash &&
+          !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
+        )
+      ) {
+        throw new Error('You are not authorised to access the requested resource.');
+      }
+
+      return observable<z.infer<typeof MemberChangeZSchema>[]>((observer) => {
+        const onMemberJoin = async (newMember: z.infer<typeof MemberChangeZSchema>) => {
+          if (chatRoomName !== newMember.chatRoomName) return;
+
+          const existingOnline = await activeMemberNCache.get(chatRoomName);
+
+          if (existingOnline === undefined) {
+            await activeMemberNCache.set(chatRoomName, [newMember]);
+            observer.next([newMember]);
+          } else {
+            const updatedExistingOnline = (existingOnline as z.infer<typeof MemberChangeZSchema>[]).concat(newMember);
+            activeMemberNCache
+              .set(chatRoomName, updatedExistingOnline)
+              .then(() =>
+                activeMemberNCache
+                  .get(chatRoomName)
+                  .then((data) => observer.next(data as z.infer<typeof MemberChangeZSchema>[])),
+              );
+          }
+        };
+
+        const onMemberLeave = async (exMember: z.infer<typeof MemberChangeZSchema>) => {
+          if (chatRoomName !== exMember.chatRoomName) return;
+
+          const existingOnline = (await activeMemberNCache.get(chatRoomName)) as z.infer<typeof MemberChangeZSchema>[];
+          const updatedExistingOnline = existingOnline.filter((m) => m.userName !== exMember.userName);
+
+          activeMemberNCache.set(chatRoomName, updatedExistingOnline).then(() => observer.next(updatedExistingOnline));
+        };
+
+        ee.on('memberJoin', onMemberJoin);
+
+        ee.on('memberLeave', onMemberLeave);
+
+        ee.emit('memberJoin', { userName, user_token_hash, chatRoomName });
+
+        return () => {
+          ee.emit('memberLeave', { chatRoomName, userName, user_token_hash });
+
+          ee.off('memberJoin', onMemberJoin);
+          ee.off('memberLeave', onMemberLeave);
         };
       });
     }),

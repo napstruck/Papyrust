@@ -8,13 +8,18 @@ import { initMongoDB } from './db/db-init';
 import { envSchema } from './env.schema';
 import { appRouter } from './routers/app';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { test_main } from './trpc.test';
 import { uptimeInSecond } from './utils/system';
+import { WebSocketServer } from 'ws';
 
 envSchema.parse(process.env);
 
 const app = express();
 const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+applyWSSHandler({ wss, router: appRouter });
 
 app.use(cors({ origin: ['http://localhost:5173'] }));
 

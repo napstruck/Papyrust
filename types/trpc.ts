@@ -14,7 +14,7 @@ export const SendMessageInputZSchema = z.object({
       .nullable()
       .default(null),
   }),
-  inviteCode: z.string(),
+  chatRoomName: z.string(),
   password: z.string(),
 });
 
@@ -30,4 +30,10 @@ export const MessageBodyZSchema = z.object({
     .optional()
     .nullable()
     .default(null),
+});
+
+export const MemberChangeZSchema = z.object({
+  user_token_hash: z.string(),
+  userName: z.string(),
+  chatRoomName: z.string(),
 });
