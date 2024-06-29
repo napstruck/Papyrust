@@ -31,3 +31,9 @@ export const MessageBodyZSchema = z.object({
     .nullable()
     .default(null),
 });
+
+export const MemberChangeZSchema = z.object({
+  user_token_hash: z.string(),
+  userName: z.string(),
+  chatRoomName: z.string(),
+});
