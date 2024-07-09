@@ -243,7 +243,7 @@ export const chatRoomRouter = t.router({
       z.object({
         messageBody: z.object({
           content: z.string(),
-          sender_token: z.string(),
+          sender_token_hash: z.string(),
           sender_username: z.string(),
           reply_to: z
             .object({
@@ -272,14 +272,14 @@ export const chatRoomRouter = t.router({
         });
       }
 
-      const { content, sender_token, sender_username, reply_to } = input.messageBody;
+      const { content, sender_token_hash, sender_username, reply_to } = input.messageBody;
 
       await ChatRoomModel.findOneAndUpdate(
         {
           name: input.chatRoomName,
           password_hash: sha256(input.password),
         },
-        { $push: { messages: { content, sender_token_hash: sha256(sender_token), sender_username, reply_to } } },
+        { $push: { messages: { content, sender_token_hash, sender_username, reply_to } } },
       );
 
       ee.emit('newMessage', { ...input });

@@ -1,6 +1,6 @@
 import { ZodRawShape, z } from 'zod';
 
-export const buildResponseZObjectType = (payloadZObjectType: ZodRawShape | null = null): any =>
+export const buildResponseZObjectType = (payloadZObjectType: ZodRawShape | null = null) =>
   z.object({
     success: z.boolean(),
     payload: z
