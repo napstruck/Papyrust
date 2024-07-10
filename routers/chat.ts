@@ -154,6 +154,7 @@ export const chatRoomRouter = t.router({
           if (
             data.chatRoomName === chatRoomName &&
             data.password === password &&
+            user_token_hash !== data.messageBody.sender_token_hash &&
             !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
           ) {
             observer.next({ ...data.messageBody });
