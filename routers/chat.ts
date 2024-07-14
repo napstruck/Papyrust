@@ -289,4 +289,43 @@ export const chatRoomRouter = t.router({
         success: true,
       };
     }),
+
+  getChatRoomInvite: t.procedure
+    .input(
+      z.object({
+        chatRoomName: z.string(),
+        //password: z.string(),
+        user_token_hash: z.string(),
+      }),
+    )
+    .output(
+      buildResponseZObjectType({
+        chatroominvite: z.object({
+          name: z.string(),
+          invite_code: z.string(),
+        }), // :sunflower:
+      }),
+    )
+    .query(async ({ input }) => {
+      const requestedChatRoom = await ChatRoomModel.findOne({
+        name: input.chatRoomName,
+      });
+
+      if (!requestedChatRoom) {
+        throw new TRPCError({
+          message: 'Invalid room credentials',
+          code: 'UNAUTHORIZED',
+        });
+      }
+
+      return {
+        success: true,
+        payload: {
+          chatroominvite: {
+            name: requestedChatRoom.name,
+            invite_code: requestedChatRoom.invite_code,
+          },
+        },
+      };
+    }),
 });
