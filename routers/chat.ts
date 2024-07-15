@@ -60,14 +60,17 @@ export const chatRoomRouter = t.router({
       }),
     )
     .mutation(async ({ input }) => {
-      const { inviteCode, password } = input;
+      const { inviteCode, password, userToken } = input;
+      const userTokenHash = sha256(userToken);
 
       const requestedChatRoom = await ChatRoomModel.findOne({
         invite_code: inviteCode,
         password_hash: sha256(password),
       });
 
-      if (!requestedChatRoom) {
+      console.log(requestedChatRoom!.blacklisted_user_token_hashes, userTokenHash, '❌❌❌');
+
+      if (!requestedChatRoom || requestedChatRoom.blacklisted_user_token_hashes.includes(userTokenHash)) {
         throw new TRPCError({
           message: 'Invalid room credentials',
           code: 'UNAUTHORIZED',
