@@ -21,7 +21,7 @@ const wss = new WebSocketServer({ server });
 
 applyWSSHandler({ wss, router: appRouter });
 
-app.use(cors({ origin: ['http://localhost:5173'] }));
+app.use(cors({ origin: ['http://localhost:5173', 'https://papyrust.netlify.app'] }));
 
 app.get('/', (_, res) => {
   res.json({ status: 'OK', uptime: uptimeInSecond(), message: 'All Good WW 🌻' });
