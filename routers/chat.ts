@@ -60,14 +60,17 @@ export const chatRoomRouter = t.router({
       }),
     )
     .mutation(async ({ input }) => {
-      const { inviteCode, password } = input;
+      const { inviteCode, password, userToken } = input;
+      const userTokenHash = sha256(userToken);
 
       const requestedChatRoom = await ChatRoomModel.findOne({
         invite_code: inviteCode,
         password_hash: sha256(password),
       });
 
-      if (!requestedChatRoom) {
+      console.log(requestedChatRoom!.blacklisted_user_token_hashes, userTokenHash, '❌❌❌');
+
+      if (!requestedChatRoom || requestedChatRoom.blacklisted_user_token_hashes.includes(userTokenHash)) {
         throw new TRPCError({
           message: 'Invalid room credentials',
           code: 'UNAUTHORIZED',
@@ -287,6 +290,45 @@ export const chatRoomRouter = t.router({
 
       return {
         success: true,
+      };
+    }),
+
+  getChatRoomInvite: t.procedure
+    .input(
+      z.object({
+        chatRoomName: z.string(),
+        //password: z.string(),
+        user_token_hash: z.string(),
+      }),
+    )
+    .output(
+      buildResponseZObjectType({
+        chatroominvite: z.object({
+          name: z.string(),
+          invite_code: z.string(),
+        }), // :sunflower:
+      }),
+    )
+    .query(async ({ input }) => {
+      const requestedChatRoom = await ChatRoomModel.findOne({
+        name: input.chatRoomName,
+      });
+
+      if (!requestedChatRoom) {
+        throw new TRPCError({
+          message: 'Invalid room credentials',
+          code: 'UNAUTHORIZED',
+        });
+      }
+
+      return {
+        success: true,
+        payload: {
+          chatroominvite: {
+            name: requestedChatRoom.name,
+            invite_code: requestedChatRoom.invite_code,
+          },
+        },
       };
     }),
 });
