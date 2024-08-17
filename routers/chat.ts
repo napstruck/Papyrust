@@ -68,8 +68,6 @@ export const chatRoomRouter = t.router({
         password_hash: sha256(password),
       });
 
-      console.log(requestedChatRoom!.blacklisted_user_token_hashes, userTokenHash, '❌❌❌');
-
       if (!requestedChatRoom || requestedChatRoom.blacklisted_user_token_hashes.includes(userTokenHash)) {
         throw new TRPCError({
           message: 'Invalid room credentials',
@@ -240,6 +238,87 @@ export const chatRoomRouter = t.router({
           ee.off('memberLeave', onMemberLeave);
         };
       });
+    }),
+
+  //to send the received typing ping to other users.
+  onTypingMessage: t.procedure
+    .input(
+      z.object({
+        chatRoomName: z.string(),
+        password: z.string(),
+        userToken: z.string(),
+        userName: z.string(),
+      }),
+    )
+    .subscription(async ({ input }) => {
+      const { chatRoomName, password, userToken, userName } = input;
+      const user_token_hash = sha256(userToken);
+
+      const chatRoom = await ChatRoomModel.findOne({ name: chatRoomName });
+      if (chatRoom === null) throw Error('The chat room in tunneling request does not exist');
+
+      if (
+        !(
+          chatRoomName === chatRoom.name &&
+          sha256(password) === chatRoom.password_hash &&
+          !chatRoom.blacklisted_user_token_hashes.includes(user_token_hash)
+        )
+      ) {
+        throw new Error('You are not authorised to access the requested resource.');
+      }
+
+      return observable<{ userName: string; user_token_hash: string }>((observer) => {
+        const onClientTyping = async (typingClient: {
+          userName: string;
+          user_token_hash: string;
+          chatRoomName: string;
+        }) => {
+          if (chatRoomName !== typingClient.chatRoomName) return;
+
+          observer.next({ userName: typingClient.userName, user_token_hash: typingClient.user_token_hash });
+        };
+
+        ee.on('typingClient', onClientTyping);
+
+        return () => {
+          ee.off('typingClient', onClientTyping);
+        };
+      });
+    }),
+
+  // to send the typing user ping
+  typing: t.procedure
+    .input(
+      z.object({
+        chatRoomName: z.string(),
+        password: z.string(),
+        userName: z.string(),
+        userToken: z.string(),
+      }),
+    )
+    .output(buildResponseZObjectType())
+    .mutation(async ({ input }) => {
+      const requestedChatRoom = await ChatRoomModel.findOne({
+        name: input.chatRoomName,
+        password_hash: sha256(input.password),
+      });
+
+      if (!requestedChatRoom) {
+        throw new TRPCError({
+          message: 'Invalid room credentials',
+          code: 'UNAUTHORIZED',
+        });
+      }
+
+      ee.emit('typingClient', {
+        chatRoomName: input.chatRoomName,
+        userName: input.userName,
+        user_token_hash: sha256(input.userToken),
+      });
+
+      return {
+        success: true,
+      };
     }),
 
   sendMessage: t.procedure
