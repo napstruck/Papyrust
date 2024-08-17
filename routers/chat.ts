@@ -251,7 +251,7 @@ export const chatRoomRouter = t.router({
       }),
     )
     .subscription(async ({ input }) => {
-      const { chatRoomName, password, userToken, userName } = input;
+      const { chatRoomName, password, userToken } = input;
       const user_token_hash = sha256(userToken);
 
       const chatRoom = await ChatRoomModel.findOne({ name: chatRoomName });
